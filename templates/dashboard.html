@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Dashboard</title>
+</head>
+<body>
+    <h1>Vehicle Dashboard</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Vehicle ID</th>
+                <th>Latest Reading Date</th>
+                <th>Latest Fuel Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vehicle_id, data in vehicles.items() %}
+            <tr>
+                <td>{{ vehicle_id }}</td>
+                {% if data.readings %}
+                    <td>{{ data.readings[-1].date }}</td>
+                    <td>{{ data.readings[-1].fuel_level }}</td>
+                {% else %}
+                    <td colspan="2">No readings yet</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

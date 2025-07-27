@@ -1,12 +1,20 @@
 from flask import Flask, render_template, request, jsonify
-try:
-    from vehicle_manager import VehicleManager
-except ImportError:
-    from src.vehicle_manager import VehicleManager
 import os
+import sys
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from src.vehicle_manager import VehicleManager
+except ImportError:
+    from vehicle_manager import VehicleManager
 
 app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates'))
-vehicle_manager = VehicleManager('data/vehicles_mixed.json')
+
+# Use absolute path for data file
+data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'vehicles_mixed.json')
+vehicle_manager = VehicleManager(data_path)
 
 @app.route('/')
 def dashboard():
@@ -61,10 +69,11 @@ def send_message():
             # Send message via Telegram
             alert_msg = f"📱 MESSAGE TO {vehicle_id}\nContact: {contact}\nMessage: {message}"
             try:
+                sys.path.append(os.path.dirname(os.path.dirname(__file__)))
                 from send_bot_alert import send_telegram_bot_alert
                 send_telegram_bot_alert(alert_msg)
                 return jsonify({'success': True, 'message': f'Message sent to {vehicle_id}'})
-            except:
+            except Exception as e:
                 return jsonify({'success': True, 'message': f'Message logged for {vehicle_id} ({contact})'})
         else:
             return jsonify({'success': False, 'message': 'No contact number found for this vehicle'})
@@ -84,15 +93,16 @@ def send_sms():
         sms_log = f"📱 SMS SENT VIA BOT\n\nVehicle: {vehicle_id}\nPhone: {phone}\nSender: {sender}\nMessage: {message}\n\nStatus: Delivered to device"
         
         try:
+            sys.path.append(os.path.dirname(os.path.dirname(__file__)))
             from send_bot_alert import send_telegram_bot_alert
             send_telegram_bot_alert(sms_log)
             return jsonify({'success': True, 'message': f'SMS sent to {vehicle_id}'})
-        except:
+        except Exception as e:
             return jsonify({'success': True, 'message': f'SMS queued for {vehicle_id}'})
     else:
         return jsonify({'success': False, 'message': 'Vehicle not found'})
 
 if __name__ == '__main__':
     import os
-    port = int(os.environ.get('PORT', 8080))
+    port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)

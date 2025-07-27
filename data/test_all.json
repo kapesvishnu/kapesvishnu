@@ -1,0 +1,38 @@
+{
+    "TRUCK001": {
+        "readings": [
+            {
+                "date": "2025-07-26",
+                "fuel_level": 85.5
+            },
+            {
+                "date": "2025-07-26",
+                "fuel_level": 85.5
+            },
+            {
+                "date": "2025-07-26",
+                "fuel_level": 85.5
+            },
+            {
+                "date": "2025-07-26",
+                "fuel_level": 75.0
+            }
+        ]
+    },
+    "VAN002": {
+        "readings": [
+            {
+                "date": "2025-07-26",
+                "fuel_level": 75.0
+            }
+        ]
+    },
+    "BUS003": {
+        "readings": [
+            {
+                "date": "2025-07-26",
+                "fuel_level": 75.0
+            }
+        ]
+    }
+}

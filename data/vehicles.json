@@ -1,0 +1,14 @@
+{
+    "VEHICLE001": {
+        "readings": [
+            {"date": "2024-01-15", "fuel_level": 85.5},
+            {"date": "2024-01-16", "fuel_level": 78.2}
+        ]
+    },
+    "VEHICLE002": {
+        "readings": [
+            {"date": "2024-01-15", "fuel_level": 92.1},
+            {"date": "2024-01-16", "fuel_level": 89.7}
+        ]
+    }
+}

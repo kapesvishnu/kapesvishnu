@@ -1,0 +1,20 @@
+{
+    "TRUCK123567": {
+        "readings": []
+    },
+    "TRUCK1111": {
+        "readings": []
+    },
+    "TRUCK222": {
+        "readings": [
+            {
+                "date": "2025-07-26",
+                "fuel_level": 100.0
+            },
+            {
+                "date": "2025-07-26",
+                "fuel_level": 50.0
+            }
+        ]
+    }
+}

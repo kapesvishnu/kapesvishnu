@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diesel Tank Monitoring Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex: 1; text-align: center; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th { background: #4a5568; color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
+        tr:hover { background-color: #f7fafc; }
+        .fuel-high { color: #38a169; font-weight: bold; }
+        .fuel-medium { color: #d69e2e; font-weight: bold; }
+        .fuel-low { color: #e53e3e; font-weight: bold; }
+        .status-active { background: #c6f6d5; color: #22543d; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .location { font-size: 12px; color: #718096; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚛 Diesel Tank Monitoring Dashboard</h1>
+        <p>Real-time vehicle fuel monitoring and tracking system</p>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <h3>{{ vehicles|length }}</h3>
+            <p>Total Vehicles</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ vehicles.values()|selectattr('readings')|list|length }}</h3>
+            <p>Active Vehicles</p>
+        </div>
+        <div class="stat-card">
+            <h3>{% set total_fuel = [] %}{% for vehicle_id, data in vehicles.items() %}{% if data.readings %}{% set _ = total_fuel.append(data.readings[-1].fuel_level) %}{% endif %}{% endfor %}{{ "%.1f"|format(total_fuel|sum) }}L</h3>
+            <p>Total Fuel</p>
+        </div>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3>Add Vehicle / Update Fuel</h3>
+        <form style="display: flex; gap: 15px; align-items: end;">
+            <div>
+                <label>Vehicle ID:</label><br>
+                <input type="text" id="vehicleId" placeholder="TRUCK001" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <div>
+                <label>Fuel Level (%):</label><br>
+                <input type="number" id="fuelLevel" placeholder="85.5" min="0" max="100" step="0.1" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+            <button type="button" onclick="addVehicle()" style="padding: 10px 20px; background: #4a5568; color: white; border: none; border-radius: 4px; cursor: pointer;">Add Vehicle</button>
+            <button type="button" onclick="updateFuel()" style="padding: 10px 20px; background: #38a169; color: white; border: none; border-radius: 4px; cursor: pointer;">Update Fuel</button>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Truck Number</th>
+                <th>Vehicle ID</th>
+                <th>Fuel Level (%)</th>
+                <th>Diesel (Liters)</th>
+                <th>Location</th>
+                <th>Last Updated</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vehicle_id, data in vehicles.items() %}
+            <tr>
+                <td><strong>{{ vehicle_id.split('0')[0] if '0' in vehicle_id else vehicle_id[:3] }}{{ "%03d"|format(loop.index) }}</strong></td>
+                <td>{{ vehicle_id }}</td>
+                {% if data.readings %}
+                    {% set fuel_percent = data.readings[-1].fuel_level %}
+                    {% set fuel_liters = (fuel_percent * 2.0)|round(1) %}
+                    <td>
+                        <span class="{% if fuel_percent >= 70 %}fuel-high{% elif fuel_percent >= 30 %}fuel-medium{% else %}fuel-low{% endif %}">
+                            {{ "%.1f"|format(fuel_percent) }}%
+                        </span>
+                    </td>
+                    <td>{{ fuel_liters }}L</td>
+                    <td class="location">
+                        📍 {{ "%.4f"|format(12.9716 + loop.index * 0.001) }}, {{ "%.4f"|format(77.5946 + loop.index * 0.001) }}<br>
+                        <small>Bangalore, India</small>
+                    </td>
+                    <td>{{ data.readings[-1].date }}</td>
+                    <td><span class="status-active">ACTIVE</span></td>
+                {% else %}
+                    <td colspan="5" style="text-align: center; color: #a0aec0;">No readings available</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div style="margin-top: 20px; text-align: center; color: #718096; font-size: 12px;">
+        Last refreshed: Auto-refresh every 30 seconds
+    </div>
+    
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(function(){ location.reload(); }, 30000);
+        
+        // Add click handlers for rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', function() {
+                const vehicleId = this.cells[1].textContent;
+                alert('Vehicle Details: ' + vehicleId + '\nClick OK to view more details');
+            });
+        });
+        
+        function addVehicle() {
+            const vehicleId = document.getElementById('vehicleId').value;
+            const fuelLevel = document.getElementById('fuelLevel').value;
+            
+            if (!vehicleId) {
+                alert('Please enter Vehicle ID');
+                return;
+            }
+            
+            fetch('/add_vehicle', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({vehicle_id: vehicleId, fuel_level: fuelLevel || 100})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    document.getElementById('vehicleId').value = '';
+                    document.getElementById('fuelLevel').value = '';
+                    location.reload();
+                }
+            });
+        }
+        
+        function updateFuel() {
+            const vehicleId = document.getElementById('vehicleId').value;
+            const fuelLevel = document.getElementById('fuelLevel').value;
+            
+            if (!vehicleId || !fuelLevel) {
+                alert('Please enter both Vehicle ID and Fuel Level');
+                return;
+            }
+            
+            fetch('/update_fuel', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({vehicle_id: vehicleId, fuel_level: parseFloat(fuelLevel)})
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    document.getElementById('vehicleId').value = '';
+                    document.getElementById('fuelLevel').value = '';
+                    location.reload();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

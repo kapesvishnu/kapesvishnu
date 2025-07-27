@@ -1,0 +1,31 @@
+{
+    "TRUCK1": {
+        "readings": [
+            {
+                "date": "2025-07-26",
+                "fuel_level": 100.0
+            },
+            {
+                "date": "2025-07-26",
+                "fuel_level": 94.5
+            }
+        ],
+        "destination": "Macherla",
+        "phone": "+1 203-895-1377"
+    },
+    "TRUCK2": {
+        "readings": [
+            {
+                "date": "2025-07-26",
+                "fuel_level": 95.0
+            },
+            {
+                "date": "2025-07-26",
+                "fuel_level": 70.0
+            }
+        ],
+        "destination": "MACHERLA",
+        "contact": "+91 8688997909",
+        "phone": "+1 475-231-5748"
+    }
+}

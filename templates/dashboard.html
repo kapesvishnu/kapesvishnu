@@ -18,6 +18,13 @@
         .fuel-low { color: #e53e3e; font-weight: bold; }
         .status-active { background: #c6f6d5; color: #22543d; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
         .location { font-size: 12px; color: #718096; }
+        .toggle-container { margin-bottom: 20px; text-align: center; }
+        .toggle-btn { padding: 10px 20px; margin: 0 5px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .toggle-btn.active { background: #4a5568; color: white; }
+        .toggle-btn.inactive { background: #e2e8f0; color: #4a5568; }
+        .vehicle-row { display: table-row; }
+        .vehicle-row.hidden { display: none; }
+        .status-inactive { background: #fed7d7; color: #c53030; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -41,19 +48,47 @@
         </div>
     </div>
 
+    <div class="toggle-container">
+        <button class="toggle-btn active" id="allBtn" onclick="showAll()">All Vehicles</button>
+        <button class="toggle-btn inactive" id="activeBtn" onclick="showActive()">Active Only</button>
+        <button class="toggle-btn inactive" id="inactiveBtn" onclick="showInactive()">Inactive Only</button>
+    </div>
+
     <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <h3>Add Vehicle / Update Fuel</h3>
-        <form style="display: flex; gap: 15px; align-items: end;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3>Add Vehicle / Update Fuel</h3>
+            <button onclick="openTelegramBot()" style="padding: 8px 15px; background: #0088cc; color: white; border: none; border-radius: 4px; cursor: pointer;">📱 Open Telegram Bot</button>
+        </div>
+        <form style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; align-items: end;">
             <div>
                 <label>Vehicle ID:</label><br>
-                <input type="text" id="vehicleId" placeholder="TRUCK001" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="text" id="vehicleId" placeholder="TRUCK001" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
             </div>
             <div>
-                <label>Fuel Level (%):</label><br>
-                <input type="number" id="fuelLevel" placeholder="85.5" min="0" max="100" step="0.1" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <label>Diesel (Liters):</label><br>
+                <input type="number" id="fuelLevel" placeholder="170.0" min="0" max="200" step="0.1" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
             </div>
-            <button type="button" onclick="addVehicle()" style="padding: 10px 20px; background: #4a5568; color: white; border: none; border-radius: 4px; cursor: pointer;">Add Vehicle</button>
-            <button type="button" onclick="updateFuel()" style="padding: 10px 20px; background: #38a169; color: white; border: none; border-radius: 4px; cursor: pointer;">Update Fuel</button>
+            <div>
+                <label>Destination:</label><br>
+                <input type="text" id="destination" placeholder="Mumbai" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+            </div>
+            <div>
+                <label>Contact Number:</label><br>
+                <input type="tel" id="contactNumber" placeholder="+91 9876543210" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+            </div>
+            <div>
+                <label>Phone Number:</label><br>
+                <input type="tel" id="phoneNumber" placeholder="+1 555-123-4567" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%;">
+            </div>
+            <div style="grid-column: span 2;">
+                <label>Message:</label><br>
+                <textarea id="message" placeholder="Enter message to send..." style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; height: 60px; resize: vertical;"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="addVehicle()" style="padding: 10px 15px; background: #4a5568; color: white; border: none; border-radius: 4px; cursor: pointer;">Add Vehicle</button>
+                <button type="button" onclick="updateVehicle()" style="padding: 10px 15px; background: #38a169; color: white; border: none; border-radius: 4px; cursor: pointer;">Update Vehicle</button>
+                <button type="button" onclick="sendMessage()" style="padding: 10px 15px; background: #3182ce; color: white; border: none; border-radius: 4px; cursor: pointer;">Send Message</button>
+            </div>
         </form>
     </div>
 
@@ -64,17 +99,22 @@
                 <th>Vehicle ID</th>
                 <th>Fuel Level (%)</th>
                 <th>Diesel (Liters)</th>
-                <th>Location</th>
+                <th>Current Location</th>
+                <th>Destination</th>
+                <th>Contact</th>
+                <th>Phone</th>
                 <th>Last Updated</th>
                 <th>Status</th>
             </tr>
         </thead>
         <tbody>
             {% for vehicle_id, data in vehicles.items() %}
-            <tr>
+            {% set has_readings = data.readings and data.readings|length > 0 %}
+            {% set is_active = has_readings and ((data.readings[-1].date | string) == (moment().format('YYYY-MM-DD') if moment else '2024-01-16')) %}
+            <tr class="vehicle-row {{ 'active-vehicle' if is_active else 'inactive-vehicle' }}">
                 <td><strong>{{ vehicle_id.split('0')[0] if '0' in vehicle_id else vehicle_id[:3] }}{{ "%03d"|format(loop.index) }}</strong></td>
                 <td>{{ vehicle_id }}</td>
-                {% if data.readings %}
+                {% if has_readings %}
                     {% set fuel_percent = data.readings[-1].fuel_level %}
                     {% set fuel_liters = (fuel_percent * 2.0)|round(1) %}
                     <td>
@@ -87,10 +127,24 @@
                         📍 {{ "%.4f"|format(12.9716 + loop.index * 0.001) }}, {{ "%.4f"|format(77.5946 + loop.index * 0.001) }}<br>
                         <small>Bangalore, India</small>
                     </td>
+                    <td>🎯 {{ data.destination if data.destination else 'Not Set' }}</td>
+                    <td>
+                        📞 {{ data.contact if data.contact else 'Not Set' }}<br>
+                        {% if data.contact %}
+                        <button onclick="quickMessage('{{ vehicle_id }}', '{{ data.contact }}')" style="padding: 2px 6px; background: #3182ce; color: white; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; margin-top: 3px;">Send Message</button>
+                        {% endif %}
+                    </td>
+                    <td>
+                        📱 {{ data.phone if data.phone else 'Not Set' }}<br>
+                        {% if data.phone %}
+                        <button onclick="callPhone('{{ data.phone }}')" style="padding: 2px 6px; background: #38a169; color: white; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; margin-top: 3px;">Call</button>
+                        <button onclick="sendSMS('{{ data.phone }}', '{{ vehicle_id }}')" style="padding: 2px 6px; background: #e53e3e; color: white; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; margin-top: 3px; margin-left: 2px;">SMS</button>
+                        {% endif %}
+                    </td>
                     <td>{{ data.readings[-1].date }}</td>
-                    <td><span class="status-active">ACTIVE</span></td>
+                    <td><span class="{{ 'status-active' if is_active else 'status-inactive' }}">{{ 'ACTIVE' if is_active else 'INACTIVE' }}</span></td>
                 {% else %}
-                    <td colspan="5" style="text-align: center; color: #a0aec0;">No readings available</td>
+                    <td colspan="8" style="text-align: center; color: #a0aec0;">No readings available</td>
                 {% endif %}
             </tr>
             {% endfor %}
@@ -117,6 +171,9 @@
         function addVehicle() {
             const vehicleId = document.getElementById('vehicleId').value;
             const fuelLevel = document.getElementById('fuelLevel').value;
+            const destination = document.getElementById('destination').value;
+            const contactNumber = document.getElementById('contactNumber').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
             
             if (!vehicleId) {
                 alert('Please enter Vehicle ID');
@@ -126,42 +183,204 @@
             fetch('/add_vehicle', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({vehicle_id: vehicleId, fuel_level: fuelLevel || 100})
+                body: JSON.stringify({vehicle_id: vehicleId, fuel_level: fuelLevel || 200, destination: destination, contact: contactNumber, phone: phoneNumber})
             })
             .then(response => response.json())
             .then(data => {
                 alert(data.message);
                 if (data.success) {
-                    document.getElementById('vehicleId').value = '';
-                    document.getElementById('fuelLevel').value = '';
+                    clearForm();
                     location.reload();
                 }
             });
         }
         
-        function updateFuel() {
+        function updateVehicle() {
             const vehicleId = document.getElementById('vehicleId').value;
             const fuelLevel = document.getElementById('fuelLevel').value;
+            const destination = document.getElementById('destination').value;
+            const contactNumber = document.getElementById('contactNumber').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
             
-            if (!vehicleId || !fuelLevel) {
-                alert('Please enter both Vehicle ID and Fuel Level');
+            if (!vehicleId) {
+                alert('Please enter Vehicle ID');
                 return;
             }
             
-            fetch('/update_fuel', {
+            const updateData = {vehicle_id: vehicleId};
+            if (fuelLevel) updateData.fuel_level = parseFloat(fuelLevel);
+            if (destination) updateData.destination = destination;
+            if (contactNumber) updateData.contact = contactNumber;
+            if (phoneNumber) updateData.phone = phoneNumber;
+            
+            fetch('/update_vehicle', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({vehicle_id: vehicleId, fuel_level: parseFloat(fuelLevel)})
+                body: JSON.stringify(updateData)
             })
             .then(response => response.json())
             .then(data => {
                 alert(data.message);
                 if (data.success) {
-                    document.getElementById('vehicleId').value = '';
-                    document.getElementById('fuelLevel').value = '';
+                    clearForm();
                     location.reload();
                 }
             });
+        }
+        
+        function showAll() {
+            document.querySelectorAll('.vehicle-row').forEach(row => row.classList.remove('hidden'));
+            setActiveButton('allBtn');
+        }
+        
+        function showActive() {
+            document.querySelectorAll('.vehicle-row').forEach(row => {
+                if (row.classList.contains('active-vehicle')) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+            setActiveButton('activeBtn');
+        }
+        
+        function showInactive() {
+            document.querySelectorAll('.vehicle-row').forEach(row => {
+                if (row.classList.contains('inactive-vehicle')) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+            setActiveButton('inactiveBtn');
+        }
+        
+        function setActiveButton(activeId) {
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('inactive');
+            });
+            document.getElementById(activeId).classList.remove('inactive');
+            document.getElementById(activeId).classList.add('active');
+        }
+        
+        function clearForm() {
+            document.getElementById('vehicleId').value = '';
+            document.getElementById('fuelLevel').value = '';
+            document.getElementById('destination').value = '';
+            document.getElementById('contactNumber').value = '';
+            document.getElementById('phoneNumber').value = '';
+            document.getElementById('message').value = '';
+        }
+        
+        function callPhone(phoneNumber) {
+            window.open(`tel:${phoneNumber}`, '_self');
+        }
+        
+        function sendSMS(phoneNumber, vehicleId) {
+            const message = prompt(`Send SMS to ${vehicleId} (${phoneNumber}):`);
+            
+            if (!message) {
+                return;
+            }
+            
+            // Open SMS app with pre-filled message
+            window.open(`sms:${phoneNumber}?body=${encodeURIComponent(message)}`, '_self');
+            
+            // Send to specific Telegram user based on phone number
+            sendToSpecificTelegram(phoneNumber, message, vehicleId);
+        }
+        
+        function sendToSpecificTelegram(phoneNumber, message, vehicleId) {
+            // Phone to chat ID mapping
+            const phoneToChat = {
+                '+1 555-123-4567': '7542768640',
+                '+91 9876543210': '7542768640',
+                '+1 555-234-5678': '7542768640',
+                '+91 8765432109': '7542768640'
+            };
+            
+            const chatId = phoneToChat[phoneNumber] || '7542768640';
+            const telegramMessage = `📱 SMS TO ${vehicleId}\nPhone: ${phoneNumber}\nMessage: ${message}\n\nSent from Dashboard`;
+            const botToken = '8490975345:AAHbPK7KCzQZMbsLwRpiSb8K5Oggsn1ziJg';
+            
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: telegramMessage
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    console.log(`✓ SMS notification sent to Telegram for ${phoneNumber}`);
+                } else {
+                    console.log(`✗ Failed to send notification: ${data.description}`);
+                }
+            })
+            .catch(error => {
+                console.log(`✗ Error sending notification: ${error}`);
+            });
+        }
+        
+        function sendMessage() {
+            const vehicleId = document.getElementById('vehicleId').value;
+            const message = document.getElementById('message').value;
+            
+            if (!vehicleId || !message) {
+                alert('Please enter Vehicle ID and Message');
+                return;
+            }
+            
+            // Get contact from vehicles data or use default
+            const contact = 'Driver';
+            sendToTelegram(vehicleId, contact, message);
+            document.getElementById('message').value = '';
+        }
+        
+        function quickMessage(vehicleId, contact) {
+            const message = prompt(`Send message to ${vehicleId} (${contact}):`);
+            
+            if (!message) {
+                return;
+            }
+            
+            // Send via Telegram API directly
+            sendToTelegram(vehicleId, contact, message);
+        }
+        
+        function sendToTelegram(vehicleId, contact, message) {
+            const telegramMessage = `🚛 ${vehicleId}\n📞 ${contact}\n💬 ${message}`;
+            const botToken = '8490975345:AAHbPK7KCzQZMbsLwRpiSb8K5Oggsn1ziJg';
+            const chatId = '7542768640';
+            
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: telegramMessage
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    alert('✓ Message sent to Telegram successfully!');
+                } else {
+                    alert('✗ Failed to send message: ' + data.description);
+                }
+            })
+            .catch(error => {
+                alert('✗ Error sending message: ' + error);
+            });
+        }
+        
+        function openTelegramBot() {
+            const botUsername = 'Fuel_Monitoring_Tank_bot';
+            const telegramUrl = `https://t.me/${botUsername}`;
+            window.open(telegramUrl, '_blank');
         }
     </script>
 </body>

@@ -18,10 +18,10 @@ class VehicleManager:
         with open(self.data_file, 'w') as f:
             json.dump(self.vehicles, f, indent=4)
 
-    def register_vehicle(self, vehicle_id):
+    def register_vehicle(self, vehicle_id, destination=None, contact=None, phone=None):
         if not vehicle_id or vehicle_id in self.vehicles:
             return False
-        self.vehicles[vehicle_id] = {'readings': []}
+        self.vehicles[vehicle_id] = {'readings': [], 'destination': destination, 'contact': contact, 'phone': phone}
         self._save_vehicles()
         return True
 
@@ -30,11 +30,37 @@ class VehicleManager:
             return False
         try:
             fuel_level = float(fuel_level)
-            if fuel_level < 0 or fuel_level > 100:
+            if fuel_level < 0 or fuel_level > 200:  # Max 200L tank capacity
                 return False
         except (ValueError, TypeError):
             return False
         today = datetime.now().strftime('%Y-%m-%d')
-        self.vehicles[vehicle_id]['readings'].append({'date': today, 'fuel_level': fuel_level})
+        # Convert liters to percentage for storage compatibility
+        fuel_percentage = (fuel_level / 200) * 100
+        self.vehicles[vehicle_id]['readings'].append({'date': today, 'fuel_level': fuel_percentage})
+        self._save_vehicles()
+        return True
+    
+    def update_vehicle(self, vehicle_id, fuel_level=None, destination=None, contact=None, phone=None):
+        if vehicle_id not in self.vehicles:
+            return False
+        
+        # Update fuel level if provided
+        if fuel_level is not None:
+            if not self.record_daily_update(vehicle_id, fuel_level):
+                return False
+        
+        # Update destination if provided
+        if destination is not None:
+            self.vehicles[vehicle_id]['destination'] = destination
+        
+        # Update contact if provided
+        if contact is not None:
+            self.vehicles[vehicle_id]['contact'] = contact
+            
+        # Update phone if provided
+        if phone is not None:
+            self.vehicles[vehicle_id]['phone'] = phone
+        
         self._save_vehicles()
         return True

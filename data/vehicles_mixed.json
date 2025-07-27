@@ -1,0 +1,34 @@
+{
+    "VEHICLE001": {
+        "readings": [
+            {"date": "2024-01-15", "fuel_level": 85.5},
+            {"date": "2024-01-16", "fuel_level": 78.2}
+        ],
+        "destination": "Mumbai",
+        "contact": "+91 9876543210",
+        "phone": "+1 555-123-4567"
+    },
+    "VEHICLE002": {
+        "readings": [
+            {"date": "2024-01-15", "fuel_level": 92.1},
+            {"date": "2024-01-16", "fuel_level": 89.7}
+        ],
+        "destination": "Delhi",
+        "contact": "+91 8765432109",
+        "phone": "+1 555-234-5678"
+    },
+    "VEHICLE003": {
+        "readings": [
+            {"date": "2024-01-10", "fuel_level": 45.3}
+        ],
+        "destination": "Chennai",
+        "contact": "+91 7654321098",
+        "phone": "+1 555-345-6789"
+    },
+    "VEHICLE004": {
+        "readings": [],
+        "destination": "Kolkata",
+        "contact": "+91 6543210987",
+        "phone": "+1 555-456-7890"
+    }
+}

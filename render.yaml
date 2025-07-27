@@ -2,8 +2,12 @@ services:
   - type: web
     name: diesel-tank-monitor
     env: python
-    buildCommand: pip install -r requirements.txt
+    region: oregon
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python src/dashboard.py
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.18
       - key: PORT
-        value: 10000
+        generateValue: true
